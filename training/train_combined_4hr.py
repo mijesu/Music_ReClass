@@ -251,13 +251,21 @@ def plot_confusion_matrix(y_true, y_pred, genres, save_path):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("="*70)
-    print("COMBINED MULTI-MODAL TRAINING - 4 HOUR TARGET")
-    print("="*70)
-    print(f"\nDevice: {device}")
+    
+    # Initialize logger
+    import sys
+    sys.path.append('..')
+    from utils.training_logger import TrainingLogger
+    
+    logger = TrainingLogger(log_dir='./logs', experiment_name='combined_4hr')
+    
+    logger.log_message("="*70)
+    logger.log_message("COMBINED MULTI-MODAL TRAINING - 4 HOUR TARGET")
+    logger.log_message("="*70)
+    logger.log_message(f"\nDevice: {device}")
     if torch.cuda.is_available():
-        print(f"GPU: {torch.cuda.get_device_name(0)}")
-        print(f"Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+        logger.log_message(f"GPU: {torch.cuda.get_device_name(0)}")
+        logger.log_message(f"Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
     
     # Dataset
     full_dataset = CombinedDataset(FMA_PATH, MSD_PATH, GENRES, augment=False)
@@ -270,8 +278,8 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=20, shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=20, num_workers=4, pin_memory=True)
     
-    print(f"\nDataset: Train={len(train_dataset)}, Val={len(val_dataset)}")
-    print(f"Batch size: 20, Workers: 4")
+    logger.log_message(f"\nDataset: Train={len(train_dataset)}, Val={len(val_dataset)}")
+    logger.log_message(f"Batch size: 20, Workers: 4")
     
     # Model
     model = MultiModalClassifier(num_classes=len(GENRES)).to(device)
@@ -280,13 +288,32 @@ def main():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10)
     scaler = torch.cuda.amp.GradScaler()
     
-    print(f"\nModel: Multi-Modal (Audio CNN + MSD MLP)")
-    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
+    # Log configuration
+    logger.log_config(
+        model='MultiModalClassifier',
+        dataset='FMA+MSD',
+        train_samples=len(train_dataset),
+        val_samples=len(val_dataset),
+        batch_size=20,
+        num_workers=4,
+        optimizer='AdamW',
+        learning_rate=0.001,
+        weight_decay=0.01,
+        scheduler='CosineAnnealingWarmRestarts',
+        epochs=80,
+        patience=10,
+        time_limit_hours=4,
+        mixed_precision=True,
+        model_parameters=sum(p.numel() for p in model.parameters())
+    )
+    
+    logger.log_message(f"\nModel: Multi-Modal (Audio CNN + MSD MLP)")
+    logger.log_message(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Training
-    print("\n" + "="*70)
-    print("TRAINING START - Target: 4 hours")
-    print("="*70)
+    logger.log_message("\n" + "="*70)
+    logger.log_message("TRAINING START - Target: 4 hours")
+    logger.log_message("="*70)
     
     # Early stopping
     import sys
@@ -309,34 +336,32 @@ def main():
         elapsed = time.time() - start_time
         current_lr = optimizer.param_groups[0]['lr']
         
-        print(f"\nEpoch {epoch+1}/{epochs} ({epoch_time:.1f}s, Total: {elapsed/3600:.2f}h)")
-        print(f"  Train - Loss: {train_loss:.4f}, Acc: {train_acc:.2f}%")
-        print(f"  Val   - Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
-        print(f"  LR: {current_lr:.6f}")
+        # Log epoch
+        logger.log_message(f"\nEpoch {epoch+1}/{epochs} ({epoch_time:.1f}s, Total: {elapsed/3600:.2f}h)")
+        logger.log_epoch(epoch, train_loss, train_acc, val_loss, val_acc, current_lr, epoch_time)
         
         # Early stopping check
         if early_stopping(epoch, val_acc, model):
+            logger.log_message("Early stopping triggered")
             break
         
         # Stop if approaching 4 hours
         if elapsed > 3.8 * 3600:
-            print(f"\n⏰ Reaching 4-hour limit, stopping training")
+            logger.log_message(f"\n⏰ Reaching 4-hour limit, stopping training")
             break
     
     total_time = time.time() - start_time
     
     # Final evaluation
-    print("\n" + "="*70)
-    print("FINAL EVALUATION")
-    print("="*70)
+    logger.log_message("\n" + "="*70)
+    logger.log_message("FINAL EVALUATION")
+    logger.log_message("="*70)
     
     model.load_state_dict(torch.load(f'{OUTPUT_DIR}/combined_best.pth'))
     val_loss, val_acc, val_preds, val_labels = validate(model, val_loader, criterion, device)
     
-    print(f"\nTraining Time: {total_time/3600:.2f} hours")
-    print(f"Best Validation Accuracy: {val_acc:.2f}%")
-    print("\nClassification Report:")
-    print(classification_report(val_labels, val_preds, target_names=GENRES, digits=3))
+    report = classification_report(val_labels, val_preds, target_names=GENRES, digits=3)
+    logger.log_final_results(val_acc, total_time, report)
     
     plot_confusion_matrix(val_labels, val_preds, GENRES, f'{OUTPUT_DIR}/confusion_matrix_combined.png')
     
