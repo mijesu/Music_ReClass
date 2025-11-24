@@ -1,0 +1,58 @@
+/media/mijesu_970/SSD_Data/Python/Music_Reclass/training/train_gtzan_v2.py:59: UserWarning: PySoundFile failed. Trying audioread instead.
+  audio, _ = librosa.load(audio_path, sr=self.sr, duration=self.duration)
+/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/core/audio.py:184: FutureWarning: librosa.core.audio.__audioread_load
+	Deprecated as of librosa version 0.10.0.
+	It will be removed in librosa version 1.0.
+  y, sr_native = __audioread_load(path, offset, duration, dtype)
+Device: cuda
+
+Loading GTZAN dataset...
+Train: 800, Val: 200
+
+Initializing OpenJMLA model...
+
+============================================================
+TRAINING START
+============================================================
+Traceback (most recent call last):
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/core/audio.py", line 176, in load
+    y, sr_native = __soundfile_load(path, offset, duration, dtype)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/core/audio.py", line 209, in __soundfile_load
+    context = sf.SoundFile(path)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/soundfile.py", line 690, in __init__
+    self._file = self._open(file, mode_int, closefd)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/soundfile.py", line 1265, in _open
+    raise LibsndfileError(err, prefix="Error opening {0!r}: ".format(self.name))
+soundfile.LibsndfileError: Error opening '/media/mijesu_970/SSD_Data/DataSets/GTZAN/Data/jazz/jazz.00054.wav': Format not recognised.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/media/mijesu_970/SSD_Data/Python/Music_Reclass/training/train_gtzan_v2.py", line 282, in <module>
+    main()
+  File "/media/mijesu_970/SSD_Data/Python/Music_Reclass/training/train_gtzan_v2.py", line 228, in main
+    train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
+  File "/media/mijesu_970/SSD_Data/Python/Music_Reclass/training/train_gtzan_v2.py", line 114, in train_epoch
+    for inputs, labels in loader:
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 734, in __next__
+    data = self._next_data()
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 790, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 50, in fetch
+    data = self.dataset.__getitems__(possibly_batched_index)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/torch/utils/data/dataset.py", line 416, in __getitems__
+    return [self.dataset[self.indices[idx]] for idx in indices]
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/torch/utils/data/dataset.py", line 416, in <listcomp>
+    return [self.dataset[self.indices[idx]] for idx in indices]
+  File "/media/mijesu_970/SSD_Data/Python/Music_Reclass/training/train_gtzan_v2.py", line 59, in __getitem__
+    audio, _ = librosa.load(audio_path, sr=self.sr, duration=self.duration)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/core/audio.py", line 184, in load
+    y, sr_native = __audioread_load(path, offset, duration, dtype)
+  File "<decorator-gen-4>", line 2, in __audioread_load
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/util/decorators.py", line 63, in __wrapper
+    return func(*args, **kwargs)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/librosa/core/audio.py", line 240, in __audioread_load
+    reader = audioread.audio_open(path)
+  File "/home/mijesu_970/.local/lib/python3.10/site-packages/audioread/__init__.py", line 131, in audio_open
+    raise NoBackendError()
+audioread.exceptions.NoBackendError

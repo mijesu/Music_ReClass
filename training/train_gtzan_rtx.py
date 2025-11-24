@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 
-# Paths
-MODEL_PATH = "/media/mijesu_970/SSD_Data/AI_models/OpenJMLA/epoch_20.pth"
-GTZAN_PATH = "/media/mijesu_970/SSD_Data/DataSets/GTZAN/Data"
-CHECKPOINT_PATH = "checkpoint_v2.pth"
+# Paths - UPDATE THESE FOR YOUR RTX PC
+GTZAN_PATH = "/path/to/GTZAN/Data"  # Update this path
+OUTPUT_DIR = "./models"
+Path(OUTPUT_DIR).mkdir(exist_ok=True)
 
 GENRES = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 
@@ -26,35 +26,28 @@ class AudioDataset(Dataset):
         self.augment = augment
         self.files = []
         
+        print("Loading dataset...")
         for idx, genre in enumerate(genres):
             genre_path = self.data_path / genre
             if genre_path.exists():
                 for audio_file in genre_path.glob('*.wav'):
-                    # Test if file can be loaded
                     try:
                         librosa.load(str(audio_file), sr=sr, duration=1)
                         self.files.append((str(audio_file), idx))
                     except:
-                        print(f"Skipping corrupted file: {audio_file.name}")
-                        continue
+                        print(f"Skipping corrupted: {audio_file.name}")
+        print(f"Loaded {len(self.files)} files")
     
     def augment_audio(self, audio):
-        """Apply data augmentation"""
-        # Time stretching
         if np.random.random() < 0.5:
             rate = np.random.uniform(0.9, 1.1)
             audio = librosa.effects.time_stretch(audio, rate=rate)
-        
-        # Pitch shifting
         if np.random.random() < 0.5:
             n_steps = np.random.randint(-2, 3)
             audio = librosa.effects.pitch_shift(audio, sr=self.sr, n_steps=n_steps)
-        
-        # Add noise
         if np.random.random() < 0.3:
             noise = np.random.randn(len(audio)) * 0.005
             audio = audio + noise
-        
         return audio
     
     def __len__(self):
@@ -64,42 +57,53 @@ class AudioDataset(Dataset):
         audio_path, label = self.files[idx]
         audio, _ = librosa.load(audio_path, sr=self.sr, duration=self.duration)
         
-        # Augmentation
         if self.augment:
             audio = self.augment_audio(audio)
         
-        # Pad or crop
         if len(audio) < self.target_length:
             audio = np.pad(audio, (0, self.target_length - len(audio)))
         else:
             audio = audio[:self.target_length]
         
-        # Extract features
         mel_spec = librosa.feature.melspectrogram(y=audio, sr=self.sr, n_mels=128)
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         
         return torch.FloatTensor(mel_spec_db).unsqueeze(0), label
 
-class OpenJMLAClassifier(nn.Module):
+class GTZANClassifier(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
-        # Simple CNN for genre classification
-        self.encoder = nn.Sequential(
+        # Deeper CNN for RTX GPU
+        self.features = nn.Sequential(
             nn.Conv2d(1, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.2),
+            
             nn.Conv2d(64, 128, 3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.2),
+            
             nn.Conv2d(128, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.3),
+            
+            nn.Conv2d(256, 512, 3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d(1)
         )
         
-        # Trainable classifier head
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(0.5),
             nn.Linear(256, 128),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -107,11 +111,11 @@ class OpenJMLAClassifier(nn.Module):
         )
     
     def forward(self, x):
-        with torch.no_grad():
-            features = self.encoder(x)
-        return self.classifier(features)
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
 
-def train_epoch(model, loader, criterion, optimizer, device):
+def train_epoch(model, loader, criterion, optimizer, device, scaler):
     model.train()
     total_loss = 0
     correct = 0
@@ -120,10 +124,15 @@ def train_epoch(model, loader, criterion, optimizer, device):
     for inputs, labels in loader:
         inputs, labels = inputs.to(device), labels.to(device)
         optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+        
+        # Mixed precision training
+        with torch.cuda.amp.autocast():
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+        
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         
         total_loss += loss.item()
         _, predicted = outputs.max(1)
@@ -156,133 +165,123 @@ def validate(model, loader, criterion, device):
     
     return total_loss / len(loader), 100. * correct / total, all_preds, all_labels
 
-def plot_confusion_matrix(y_true, y_pred, genres, save_path='confusion_matrix.png'):
+def plot_confusion_matrix(y_true, y_pred, genres, save_path):
     cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 10))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=genres, yticklabels=genres)
-    plt.title('Confusion Matrix')
+    plt.title('Confusion Matrix - GTZAN Genre Classification')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
-    print(f"Confusion matrix saved to {save_path}")
-
-def save_checkpoint(model, optimizer, scheduler, epoch, val_loss, val_acc):
-    torch.save({
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'scheduler_state_dict': scheduler.state_dict(),
-        'val_loss': val_loss,
-        'val_acc': val_acc
-    }, CHECKPOINT_PATH)
-
-def load_checkpoint(model, optimizer, scheduler):
-    if Path(CHECKPOINT_PATH).exists():
-        checkpoint = torch.load(CHECKPOINT_PATH)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        print(f"Resumed from epoch {checkpoint['epoch']}, Val Acc: {checkpoint['val_acc']:.2f}%")
-        return checkpoint['epoch'] + 1
-    return 0
+    print(f"✓ Confusion matrix saved: {save_path}")
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Device: {device}")
+    
+    # Initialize logger
+    import sys
+    sys.path.append('..')
+    from utils.training_logger import TrainingLogger
+    
+    logger = TrainingLogger(log_dir='./logs', experiment_name='gtzan_rtx')
+    
+    logger.log_message(f"Device: {device}")
+    if torch.cuda.is_available():
+        logger.log_message(f"GPU: {torch.cuda.get_device_name(0)}")
+        logger.log_message(f"Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
     
     # Dataset
-    print("\nLoading GTZAN dataset...")
     full_dataset = AudioDataset(GTZAN_PATH, GENRES, augment=False)
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
-    
-    # Enable augmentation for training
     train_dataset.dataset.augment = True
     
-    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=0)
-    val_loader = DataLoader(val_dataset, batch_size=2, num_workers=0)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, num_workers=4, pin_memory=True)
     
-    print(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}")
+    logger.log_message(f"\nTrain: {len(train_dataset)}, Val: {len(val_dataset)}")
+    logger.log_message(f"Batch size: 32, Workers: 4")
     
     # Model
-    print("\nInitializing OpenJMLA model...")
-    model = OpenJMLAClassifier(num_classes=len(GENRES)).to(device)
+    model = GTZANClassifier(num_classes=len(GENRES)).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2)
+    scaler = torch.cuda.amp.GradScaler()
     
-    # Load checkpoint if exists
-    start_epoch = load_checkpoint(model, optimizer, scheduler)
+    # Log configuration
+    logger.log_config(
+        model='GTZANClassifier',
+        dataset='GTZAN',
+        train_samples=len(train_dataset),
+        val_samples=len(val_dataset),
+        batch_size=32,
+        num_workers=4,
+        optimizer='AdamW',
+        learning_rate=0.001,
+        weight_decay=0.01,
+        scheduler='CosineAnnealingWarmRestarts',
+        epochs=50,
+        patience=10,
+        mixed_precision=True,
+        model_parameters=sum(p.numel() for p in model.parameters())
+    )
+    
+    logger.log_message(f"\nModel parameters: {sum(p.numel() for p in model.parameters()):,}")
     
     # Training
-    print("\n" + "="*60)
-    print("TRAINING START")
-    print("="*60)
+    from utils.early_stopping import EarlyStopping
     
-    epochs = 20
-    best_val_acc = 0
-    patience = 5
-    patience_counter = 0
+    logger.log_message("\n" + "="*70)
+    logger.log_message("TRAINING START")
+    logger.log_message("="*70)
     
-    for epoch in range(start_epoch, epochs):
+    early_stopping = EarlyStopping(patience=10, mode='max', save_path=f'{OUTPUT_DIR}/GTZAN_best.pth')
+    
+    epochs = 50
+    start_time = time.time()
+    
+    for epoch in range(epochs):
         epoch_start = time.time()
         
-        # Train
-        train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
-        
-        # Validate
+        train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device, scaler)
         val_loss, val_acc, val_preds, val_labels = validate(model, val_loader, criterion, device)
-        
-        # Learning rate scheduling
-        scheduler.step(val_loss)
-        current_lr = optimizer.param_groups[0]['lr']
+        scheduler.step()
         
         epoch_time = time.time() - epoch_start
+        current_lr = optimizer.param_groups[0]['lr']
         
-        print(f"\nEpoch {epoch+1}/{epochs} ({epoch_time:.1f}s)")
-        print(f"  Train - Loss: {train_loss:.4f}, Acc: {train_acc:.2f}%")
-        print(f"  Val   - Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
-        print(f"  LR: {current_lr:.6f}")
+        # Log epoch metrics
+        logger.log_epoch(epoch, train_loss, train_acc, val_loss, val_acc, current_lr, epoch_time)
         
-        # Save best model
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            patience_counter = 0
-            torch.save(model.state_dict(), 'best_model_v2.pth')
-            print(f"  ✓ Best model saved (Acc: {best_val_acc:.2f}%)")
-        else:
-            patience_counter += 1
-            print(f"  Patience: {patience_counter}/{patience}")
-        
-        # Save checkpoint
-        save_checkpoint(model, optimizer, scheduler, epoch, val_loss, val_acc)
-        
-        # Early stopping
-        if patience_counter >= patience:
-            print(f"\nEarly stopping triggered at epoch {epoch+1}")
+        # Early stopping check
+        if early_stopping(epoch, val_acc, model):
+            logger.log_message("Early stopping triggered")
             break
     
-    # Final evaluation
-    print("\n" + "="*60)
-    print("FINAL EVALUATION")
-    print("="*60)
+    total_time = time.time() - start_time
     
-    model.load_state_dict(torch.load('best_model_v2.pth'))
+    # Final evaluation
+    logger.log_message("\n" + "="*70)
+    logger.log_message("FINAL EVALUATION")
+    logger.log_message("="*70)
+    
+    model.load_state_dict(torch.load(f'{OUTPUT_DIR}/GTZAN_best.pth'))
     val_loss, val_acc, val_preds, val_labels = validate(model, val_loader, criterion, device)
     
-    print(f"\nBest Validation Accuracy: {val_acc:.2f}%")
-    print("\nClassification Report:")
-    print(classification_report(val_labels, val_preds, target_names=GENRES))
+    report = classification_report(val_labels, val_preds, target_names=GENRES, digits=3)
+    logger.log_final_results(val_acc, total_time, report)
     
-    # Plot confusion matrix
-    plot_confusion_matrix(val_labels, val_preds, GENRES)
+    plot_confusion_matrix(val_labels, val_preds, GENRES, f'{OUTPUT_DIR}/confusion_matrix.png')
     
-    print("\n✓ Training complete!")
-    print(f"  Best model: best_model_v2.pth")
-    print(f"  Confusion matrix: confusion_matrix.png")
+    print("\n" + "="*70)
+    print("✓ Training complete!")
+    print(f"  Model: {OUTPUT_DIR}/GTZAN_best.pth")
+    print(f"  Confusion matrix: {OUTPUT_DIR}/confusion_matrix.png")
+    print("="*70)
 
 if __name__ == '__main__':
     main()
