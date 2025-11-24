@@ -11,13 +11,13 @@ import time
 import argparse
 
 # Paths - UPDATE THESE
-FMA_PATH = "/path/to/FMA/Data/fma_medium"
-GTZAN_PATH = "/path/to/GTZAN/Data"
+FMA_PATH = "/media/mijesu_970/SSD_Data/DataSets/GTZAN/Data"  # Using GTZAN for test
+GTZAN_PATH = "/media/mijesu_970/SSD_Data/DataSets/GTZAN/Data"
 OUTPUT_DIR = "./models"
 Path(OUTPUT_DIR).mkdir(exist_ok=True)
 
-FMA_GENRES = ['Electronic', 'Experimental', 'Folk', 'Hip-Hop', 'Instrumental', 'International',
-              'Pop', 'Rock']  # Top 8 FMA genres
+FMA_GENRES = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 
+              'reggae', 'rock']  # Using GTZAN for test
 GTZAN_GENRES = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 
                 'reggae', 'rock']
 
@@ -254,7 +254,8 @@ def main():
     
     # Initialize logger
     import sys
-    sys.path.append('..')
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from utils.training_logger import TrainingLogger
     from utils.early_stopping import EarlyStopping
     
