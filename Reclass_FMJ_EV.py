@@ -5,6 +5,17 @@ FMA → MERT → JMLA with weighted voting
 
 Accuracy: 87-94%
 Average Time: 20-40s per track
+
+Model Locations:
+- FMA Features: /media/mijesu_970/SSD_Data/AI_models/FMA/FMA.npy
+- FMA Classifier: /media/mijesu_970/SSD_Data/AI_models/MSD/msd_model.pth
+- MERT Model: /media/mijesu_970/SSD_Data/AI_models/MERT/pytorch_model.pth
+- JMLA Model: /media/mijesu_970/SSD_Data/AI_models/OpenJMLA/epoch_4-step_8639-allstep_60000.pth
+- VGGish (optional): /media/mijesu_970/SSD_Data/AI_models/VGGish/vggish-10086976.pth
+
+Usage:
+    python3 Reclass_FMJ_EV.py --audio /path/to/song.wav
+    python3 Reclass_FMJ_EV.py --audio /path/to/song.wav --track-id 12345
 """
 
 import torch
@@ -42,23 +53,24 @@ class ProgressiveVotingClassifier:
     def __init__(self, fma_model_path, mert_model_path, jmla_model_path, 
                  fma_features_path, device='cuda'):
         self.device = device
+        map_location = torch.device(device)
         
         # Load FMA classifier
         print("Loading FMA classifier...")
         self.fma_clf = SimpleClassifier(518, 16).to(device)
-        self.fma_clf.load_state_dict(torch.load(fma_model_path))
+        self.fma_clf.load_state_dict(torch.load(fma_model_path, map_location=map_location, weights_only=False))
         self.fma_clf.eval()
         
         # Load MERT classifier
         print("Loading MERT classifier...")
         self.mert_clf = SimpleClassifier(768, 16).to(device)
-        self.mert_clf.load_state_dict(torch.load(mert_model_path))
+        self.mert_clf.load_state_dict(torch.load(mert_model_path, map_location=map_location, weights_only=False))
         self.mert_clf.eval()
         
         # Load JMLA classifier
         print("Loading JMLA classifier...")
         self.jmla_clf = SimpleClassifier(768, 16).to(device)
-        self.jmla_clf.load_state_dict(torch.load(jmla_model_path))
+        self.jmla_clf.load_state_dict(torch.load(jmla_model_path, map_location=map_location, weights_only=False))
         self.jmla_clf.eval()
         
         # Load FMA features lookup
@@ -77,16 +89,22 @@ class ProgressiveVotingClassifier:
             print("Loading MERT model...")
             self.mert_processor = Wav2Vec2FeatureExtractor.from_pretrained(
                 "m-a-p/MERT-v1-330M", trust_remote_code=True)
+            # Load from local path
+            mert_path = "/media/mijesu_970/SSD_Data/AI_models/MERT"
             self.mert_model = AutoModel.from_pretrained(
-                "m-a-p/MERT-v1-330M", trust_remote_code=True).to(self.device)
+                mert_path, trust_remote_code=True).to(self.device)
             self.mert_model.eval()
     
     def load_jmla(self):
         """Lazy load JMLA model"""
         if self.jmla_model is None:
-            print("Loading JMLA model...")
-            # Load your JMLA model here
-            # self.jmla_model = load_jmla_model().to(self.device)
+            print("Loading OpenJMLA model...")
+            # Load OpenJMLA model
+            jmla_path = "/media/mijesu_970/SSD_Data/AI_models/OpenJMLA/epoch_4-step_8639-allstep_60000.pth"
+            # TODO: Implement OpenJMLA model loading
+            # self.jmla_model = load_openjmla(jmla_path).to(self.device)
+            # self.jmla_model.eval()
+            print("  Note: OpenJMLA loading not yet implemented")
             pass
     
     def extract_fma_features(self, track_id):
@@ -229,13 +247,21 @@ def main():
     """Example usage"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Progressive Voting Music Classifier')
+    parser = argparse.ArgumentParser(description='Progressive Voting Music Classifier (FMA→MERT→JMLA)')
     parser.add_argument('--audio', required=True, help='Path to audio file')
     parser.add_argument('--track-id', help='Track ID for FMA features lookup')
-    parser.add_argument('--fma-model', default='models/fma_classifier.pth')
-    parser.add_argument('--mert-model', default='models/mert_classifier.pth')
-    parser.add_argument('--jmla-model', default='models/jmla_classifier.pth')
-    parser.add_argument('--fma-features', default='data/FMA.npy')
+    parser.add_argument('--fma-model', 
+                       default='/media/mijesu_970/SSD_Data/AI_models/MSD/msd_model.pth',
+                       help='FMA classifier model path')
+    parser.add_argument('--mert-model', 
+                       default='/media/mijesu_970/SSD_Data/AI_models/trained_models/mert_classifier.pth',
+                       help='MERT classifier model path')
+    parser.add_argument('--jmla-model', 
+                       default='/media/mijesu_970/SSD_Data/AI_models/trained_models/jmla_classifier.pth',
+                       help='JMLA classifier model path')
+    parser.add_argument('--fma-features', 
+                       default='/media/mijesu_970/SSD_Data/AI_models/FMA/FMA.npy',
+                       help='Pre-computed FMA features')
     parser.add_argument('--device', default='cuda', choices=['cuda', 'cpu'])
     
     args = parser.parse_args()
