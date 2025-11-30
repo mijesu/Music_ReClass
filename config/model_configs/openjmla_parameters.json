@@ -1,0 +1,35 @@
+{
+  "model_name": "OpenJMLA",
+  "author": "MMSelfSup",
+  "total_parameters": 86366208,
+  "total_layers": 150,
+  "model_size_mb": 329.46,
+  "architecture": {
+    "type": "Vision Transformer (ViT)",
+    "embedding_dim": 768,
+    "sequence_length": 936,
+    "num_layers": 12
+  },
+  "layer_breakdown": {
+    "cls_token": {
+      "count": 1,
+      "params": 768
+    },
+    "pos_embed": {
+      "count": 1,
+      "params": 718848
+    },
+    "patch_embed": {
+      "count": 2,
+      "params": 590592
+    },
+    "layers": {
+      "count": 144,
+      "params": 85054464
+    },
+    "ln1": {
+      "count": 2,
+      "params": 1536
+    }
+  }
+}

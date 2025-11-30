@@ -1,0 +1,58 @@
+{
+  "model_name": "MERT-v1-330M",
+  "author": "m-a-p (Music Audio Pre-training)",
+  "total_parameters": 330000000,
+  "total_layers": 24,
+  "model_size_mb": 1258.0,
+  "extraction_time_per_track": "~30s",
+  "architecture": {
+    "type": "Transformer Encoder",
+    "embedding_dim": 768,
+    "hidden_size": 1024,
+    "num_layers": 24,
+    "num_attention_heads": 16,
+    "sample_rate": 24000
+  },
+  "layer_breakdown": {
+    "feature_extractor": {
+      "count": 7,
+      "params": 600000,
+      "description": "CNN layers for audio encoding"
+    },
+    "transformer_layers": {
+      "count": 24,
+      "params": 328000000,
+      "description": "Self-attention transformer blocks"
+    },
+    "projection": {
+      "count": 2,
+      "params": 1400000,
+      "description": "Output projection layers"
+    }
+  },
+  "training_data": {
+    "dataset": "Music audio (multi-genre)",
+    "hours": "160,000+ hours",
+    "pretraining_task": "Masked acoustic modeling"
+  },
+  "output_features": {
+    "feature_dims": 768,
+    "description": "Contextualized music representations"
+  },
+  "advantages": [
+    "Pre-trained on massive music data",
+    "Captures temporal patterns",
+    "Strong music understanding",
+    "Transfer learning ready"
+  ],
+  "use_cases": [
+    "Music classification",
+    "Feature extraction",
+    "Ensemble second stage",
+    "Transfer learning"
+  ],
+  "requirements": {
+    "gpu_memory": "4GB+",
+    "framework": "PyTorch + Transformers"
+  }
+}

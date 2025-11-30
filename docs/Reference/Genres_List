@@ -1,0 +1,83 @@
+**Kaggle:** Why/How to reduce the genres, FMA Medium(16) -> GTZAN (10).
+
+- FMA Medium: 25,000 tracks ; 16 genres
+
+1. Blues（蓝调）
+2. Classical（古典）
+3. Country（乡村）
+4. Easy Listening（轻音乐）
+5. Electronic（电子）
+6. Experimental（实验）
+7. Folk（民谣）
+8. Hip-Hop（嘻哈）
+9. Instrumental（器乐）
+10. International（国际）
+11. Jazz（爵士）
+12. Old-Time/Historic（老式/历史）
+13. Pop（流行）
+14. Rock（摇滚）
+15. Soul-RnB（灵魂乐/节奏蓝调）
+16. Spoken（口语/朗诵）
+
+- GTZAN dataset ready (1,000 tracks, 10 genres)
+1. Blues（蓝调）
+2. Classical（古典）
+3. Country（乡村）
+4. Disco（迪斯科）
+5. Hip-Hop（嘻哈）
+6. Jazz（爵士）
+7. Metal（金属）
+8. Pop（流行）
+9. Reggae（雷鬼）
+10. Rock（摇滚）
+
+- MSD tagtraum cd1.cls文件，MSD数据集的流派列表有**13个**：
+
+1. Blues（蓝调）
+2. Country（乡村）
+3. Electronic（电子）
+4. Folk（民谣）
+5. International（国际）
+6. Jazz（爵士）
+7. Latin（拉丁）
+8. New Age（新世纪）
+9. Pop_Rock（流行摇滚）
+10. Rap（说唱）
+11. Reggae（雷鬼）
+12. RnB（节奏蓝调）
+13. Vocal（人声）
+
+MTT数据集的**流派标签**有：29
+
+1. rock（摇滚）
+2. pop（流行）
+3. jazz（爵士）
+4. classical（古典）
+5. blues（蓝调）
+6. country（乡村）
+7. folk（民谣）
+8. reggae（雷鬼）
+9. metal（金属）
+10. punk（朋克）
+11. disco（迪斯科）
+12. techno（电子舞曲）
+13. trance（迷幻电子）
+14. hip hop（嘻哈）
+15. rap（说唱）
+16. funk（放克）
+17. electronic（电子）
+18. electronica（电子音乐）
+19. ambient（氛围音乐）
+20. new age（新世纪）
+21. opera（歌剧）
+22. world（世界音乐）
+23. hard rock（硬摇滚）
+24. soft rock（软摇滚）
+25. heavy metal（重金属）
+26. industrial（工业音乐）
+27. dance（舞曲）
+28. house（浩室）
+29. jungle（丛林音乐）
+
+注意：MTT使用**多标签分类**，一个音频片段可以有多个流派标签（例如："rock" + "guitar" + "male voice"）。
+

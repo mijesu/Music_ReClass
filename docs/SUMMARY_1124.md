@@ -102,7 +102,7 @@ This project implements automatic music genre classification using multiple appr
 │       ├── Data/fma_medium/          (25,000 tracks, 16 genres)
 │       └── Misc/fma_metadata/        (Metadata, features.csv)
 │
-├── AI_models/                         # Models & Features ⭐ STORAGE LOCATION
+├── AI_models/                         # Models & Features
 │   ├── OpenJMLA/                     (1.3 GB Vision Transformer)
 │   │   ├── epoch_20.pth              (330 MB - early checkpoint)
 │   │   └── epoch_4-step_8639-allstep_60000.pth (1.3 GB - main)
@@ -119,14 +119,7 @@ This project implements automatic music genre classification using multiple appr
 │   ├── ZTGAN/
 │   │   └── GTZAN.pth                 (409 KB - GTZAN trained)
 │   │
-│   ├── trained_models/               ⭐ Store all .pth model files here
-│   │   ├── msd_model.pth             (672 KB - trained model)
-│   │   ├── best_model.pth            (Training outputs)
-│   │   └── *.pth                     (All trained models)
-│   │
-│   └── training_logs/                ⭐ Store all training.log files here
-│       ├── training_YYYYMMDD_HHMMSS.log
-│       └── *.log                     (All training logs)
+│   └── msd_model.pth                 (672 KB - trained model)
 │
 └── Music_TBC/                         # Target music to classify
 ```
@@ -166,50 +159,7 @@ This project implements automatic music genre classification using multiple appr
 
 ## 🤖 AI Models Available
 
-### 1. MERT-v1-330M (Primary Feature Extractor) ⭐
-- **Type**: Music-specific Transformer
-- **Size**: 1.2 GB
-- **Parameters**: 330 million
-- **Embedding**: 768 dimensions
-- **Location**: `/media/mijesu_970/SSD_Data/AI_models/MERT/pytorch_model.pth`
-- **Use**: Primary music feature extraction
-
-### 2. OpenJMLA (Tertiary Feature Extractor)
-- **Type**: Vision Transformer for audio
-- **Size**: 1.3 GB
-- **Parameters**: 86 million
-- **Embedding**: 768 dimensions
-- **Location**: `/media/mijesu_970/SSD_Data/AI_models/OpenJMLA/epoch_4-step_8639-allstep_60000.pth`
-- **Use**: Audio visual patterns, final accuracy boost
-
-### 3. VGGish (Optional)
-- **Type**: CNN-based audio classifier
-- **Size**: 276 MB
-- **Embedding**: 128 dimensions
-- **Location**: `/media/mijesu_970/SSD_Data/AI_models/VGGish/vggish-10086976.pth`
-- **Use**: Fast baseline, optional ensemble
-
-### 4. FMA Features (Pre-computed)
-- **Type**: Hand-crafted features (518 dims)
-- **Size**: 211 MB
-- **Location**: `/media/mijesu_970/SSD_Data/AI_models/FMA/FMA.npy`
-- **Use**: Stage 1 fast classification
-
-### 5. MSD Model (Trained Classifier)
-- **Type**: Feature-based MLP
-- **Size**: 672 KB
-- **Accuracy**: 77%
-- **Location**: `/media/mijesu_970/SSD_Data/AI_models/MSD/msd_model.pth`
-- **Use**: FMA features classifier
-
-### 6. Additional Models (Available)
-- **HuBERT**: `/media/mijesu_970/SSD_Data/AI_models/HuBERT/pytorch_model.pth` (1.2 GB)
-- **AST**: `/media/mijesu_970/SSD_Data/AI_models/AST/pytorch_model.pth` (346 MB)
-- **CLAP**: `/media/mijesu_970/SSD_Data/AI_models/CLAP/pytorch_model.pth` (776 MB)
-- **PANNs**: `/media/mijesu_970/SSD_Data/AI_models/PANNs/pytorch_model.pth` (346 MB)
-- **EnCodec**: `/media/mijesu_970/SSD_Data/AI_models/EnCodec/pytorch_model.pth` (93 MB)
-
----
+### 1. OpenJMLA (Pre-trained) ✅
 - **Type:** Vision Transformer for audio
 - **Size:** 1.3 GB (main model)
 - **Parameters:** 86 million

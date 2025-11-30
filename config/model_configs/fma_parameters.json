@@ -1,0 +1,54 @@
+{
+  "model_name": "FMA Features",
+  "author": "librosa",
+  "total_parameters": 518,
+  "feature_type": "Hand-crafted Audio Features",
+  "extraction_time_per_track": "~1s",
+  "architecture": {
+    "type": "Feature Engineering",
+    "feature_dims": 518,
+    "sample_rate": 22050,
+    "duration": 30
+  },
+  "feature_breakdown": {
+    "chroma": {
+      "count": 16,
+      "description": "Chroma STFT (mean, std, min, max + 12 bins)"
+    },
+    "tonnetz": {
+      "count": 10,
+      "description": "Tonal centroid features (stats + 6 dims)"
+    },
+    "mfcc": {
+      "count": 140,
+      "description": "Mel-frequency cepstral coefficients (20 coeffs × 7 stats)"
+    },
+    "spectral": {
+      "count": 35,
+      "description": "Spectral features (centroid, bandwidth, rolloff, etc.)"
+    },
+    "rhythm": {
+      "count": 12,
+      "description": "Tempo and beat-related features"
+    },
+    "zero_crossing": {
+      "count": 4,
+      "description": "Zero crossing rate statistics"
+    },
+    "other": {
+      "count": 301,
+      "description": "Additional audio features (contrast, flatness, etc.)"
+    }
+  },
+  "advantages": [
+    "Fast extraction (~1s per track)",
+    "No GPU required",
+    "Interpretable features",
+    "Small storage footprint"
+  ],
+  "use_cases": [
+    "Quick baseline training",
+    "Feature-based classification",
+    "Ensemble first stage"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "model_name": "MSD Classifier",
+  "author": "Music_ReClass Project",
+  "dataset": "Million Song Dataset",
+  "total_parameters": 172544,
+  "model_size_kb": 672,
+  "training_time": "2 minutes",
+  "accuracy": "77.09%",
+  "architecture": {
+    "type": "Feed-Forward Neural Network",
+    "input_dims": 518,
+    "hidden_layers": [256, 128],
+    "output_classes": 16,
+    "activation": "ReLU",
+    "dropout": 0.3
+  },
+  "layer_breakdown": {
+    "input_layer": {
+      "params": 132608,
+      "shape": "518 → 256"
+    },
+    "hidden_layer_1": {
+      "params": 32896,
+      "shape": "256 → 128"
+    },
+    "output_layer": {
+      "params": 2064,
+      "shape": "128 → 16"
+    },
+    "batch_norm": {
+      "params": 768,
+      "layers": 2
+    },
+    "dropout": {
+      "params": 0,
+      "rate": 0.3
+    }
+  },
+  "training_details": {
+    "dataset": "FMA Medium (17,000 tracks)",
+    "epochs": 7,
+    "batch_size": 64,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "validation_split": 0.2
+  },
+  "performance": {
+    "validation_accuracy": "77.09%",
+    "training_time": "2 minutes",
+    "inference_time": "<1ms per track",
+    "top_genres": {
+      "Classical": "90%",
+      "Blues": "85%",
+      "Jazz": "82%"
+    }
+  },
+  "input_features": {
+    "type": "FMA Features",
+    "dims": 518,
+    "source": "Pre-computed from audio"
+  },
+  "output_classes": [
+    "Blues", "Classical", "Country", "Easy Listening",
+    "Electronic", "Experimental", "Folk", "Hip-Hop",
+    "Instrumental", "International", "Jazz", "Old-Time/Historic",
+    "Pop", "Rock", "Soul-RnB", "Spoken"
+  ],
+  "advantages": [
+    "Extremely fast training (2 min)",
+    "Small model size (672 KB)",
+    "Fast inference (<1ms)",
+    "No GPU required for inference",
+    "Production ready"
+  ],
+  "use_cases": [
+    "Quick baseline",
+    "Production deployment",
+    "Ensemble first stage",
+    "Real-time classification"
+  ]
+}
